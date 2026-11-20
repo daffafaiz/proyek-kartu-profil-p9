@@ -87,12 +87,12 @@ mengosongkan ketiga kolom sekaligus menghilangkan tanda error.
 
 Disini sebagai contoh jika kita sudah pernah menginput data sebelumnya maka pada saat kita login ke aplikasi ulang maka hasilnya akan tersimpan, berikut untuk hasilnya
 
-| No | Gambar | Keterangan                                                                                                                                                                                                                                                                                 |
-| -- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1 | ![Gambar 1](screenshoot/Gambar1_Login.jpeg) | **Gambar 1: Tampilan awal.** Aplikasi baru dibuka dan belum ada data tersimpan. Kolom nama, email, dan tahun lahir kosong, dengan tombol Batal, Simpan, dan Hapus data tersimpan.                                                                                                    |
-| 2 | ![Gambar 2](screenshoot/Gambar2_InputData.jpeg) | **Gambar 2: Input data.** Formulir diisi: nama `Daffa`, email `daffa@gmail.com`, tahun lahir `2006`. Lalu tekan **Simpan**.                                                                                                                                              |
-| 3 | ![Gambar 3](screenshoot/Gambar3_DataTersimpan.jpeg) | **Gambar 3: Data tersimpan.** Setelah validasi lolos, data disimpan lalu aplikasi pindah ke layar "Tentang Saya": nama, email, dan hasil olahan `Umur: 20 tahun • Dewasa`.                                                                                                        |
-| 4 | ![Gambar 4](screenshoot/Gambar4_JikaLoginUlang.jpeg) | **Gambar 4: Dibuka ulang.** Aplikasi ditutup lalu dibuka lagi. Kolom nama terisi otomatis `Daffa` dan status menampilkan `Terakhir: Daffa, 20 tahun • Dewasa`, dibaca dari SharedPreferences. Email dan tahun lahir kosong karena yang disimpan hanya nama, umur, dan kategori. |
+| No | Gambar                                               | Keterangan                                                                                                                                                                                                                                                                                 |
+| -- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1  | ![Gambar 1](screenshoot/Gambar1_Login.jpeg)          | **Gambar 1: Tampilan awal.** Aplikasi baru dibuka dan belum ada data tersimpan. Kolom nama, email, dan tahun lahir kosong, dengan tombol Batal, Simpan, dan Hapus data tersimpan.                                                                                                    |
+| 2  | ![Gambar 2](screenshoot/Gambar2_InputData.jpeg)      | **Gambar 2: Input data.** Formulir diisi: nama `Daffa`, email `daffa@gmail.com`, tahun lahir `2006`. Lalu tekan **Simpan**.                                                                                                                                              |
+| 3  | ![Gambar 3](screenshoot/Gambar3_DataTersimpan.jpeg)  | **Gambar 3: Data tersimpan.** Setelah validasi lolos, data disimpan lalu aplikasi pindah ke layar "Tentang Saya": nama, email, dan hasil olahan `Umur: 20 tahun • Dewasa`.                                                                                                        |
+| 4  | ![Gambar 4](screenshoot/Gambar4_JikaLoginUlang.jpeg) | **Gambar 4: Dibuka ulang.** Aplikasi ditutup lalu dibuka lagi. Kolom nama terisi otomatis `Daffa` dan status menampilkan `Terakhir: Daffa, 20 tahun • Dewasa`, dibaca dari SharedPreferences. Email dan tahun lahir kosong karena yang disimpan hanya nama, umur, dan kategori. |
 
 ## SharedPreferences atau Room?
 
@@ -168,6 +168,17 @@ masuk `onResponse`, bukan `onFailure`. Aplikasi menampilkan
 
 Keduanya saling melengkapi: Kartu Profil memakai penyimpanan lokal, dua
 daftar baru memakai data dari internet.
+
+**Tangkapan Layar Pertemuan 10**
+
+Layar utama kini punya dua tombol baru. Setiap tombol membuka layar daftar yang datanya diambil dari internet dengan Retrofit.
+
+| No | Gambar                                                              | Keterangan |
+| -- | ------------------------------------------------------------------- | ---------- |
+| 5  | ![Gambar 5](screenshoot/Pertemuan10_login.jpeg)                     | **Gambar 5: Layar utama dengan tombol baru.** Selain Batal, Simpan, dan Hapus data tersimpan, kini ada tombol **Lihat Pengguna** dan **Lihat Kutipan** (`btnLihatPengguna` dan `btnLihatKutipan`). |
+| 6  | ![Gambar 6](screenshoot/Pertemuan10_DaftarPengguna_dataDummy.jpeg)  | **Gambar 6: Daftar pengguna dari JSONPlaceholder.** Internet menyala. Data dari `GET https://jsonplaceholder.typicode.com/users` tampil sebagai daftar yang bisa digulir: nama (tebal), email, dan `@username`. Baris pertama `Leanne Graham`, `Sincere@april.biz`, `@Bret`. |
+| 7  | ![Gambar 7](screenshoot/Pertemuan10_DaftarPengguna_NoInternet.jpeg) | **Gambar 7: Keadaan gagal (mode pesawat).** Internet dimatikan lalu tombol **Lihat Pengguna** ditekan. `onFailure` terpanggil: Toast `Periksa koneksi internet` muncul dan teks status menampilkan `Gagal memuat data: Unable to resolve host "jsonplaceholder.typicode.com"`. Daftar kosong dan aplikasi tidak crash. |
+| 8  | ![Gambar 8](screenshoot/Pertemuan10_Kutipan.jpeg)                   | **Gambar 8: Daftar kutipan dari API pilihan sendiri.** Data dari `GET https://dummyjson.com/quotes?limit=10` (DummyJSON). Tiap baris berisi kutipan dan nama penulisnya, dengan pola yang sama seperti daftar pengguna. |
 
 ### Eksplorasi API pilihan sendiri
 
