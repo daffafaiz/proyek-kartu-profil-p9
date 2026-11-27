@@ -2,20 +2,31 @@ package com.example.belajarmobile
 
 import android.os.Bundle
 import android.view.View
+import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import retrofit2.HttpException
 
-// Pertemuan 10, Latihan 4-6 — mengambil 10 pengguna dari JSONPlaceholder
-// dengan enqueue (callback, BUKAN coroutine) dan menampilkannya di
-// RecyclerView. Tiga keadaan: memuat, sukses, gagal.
+// Pertemuan 11: daftar 10 pengguna, kini dengan coroutine (menggantikan
+// enqueue Pertemuan 10). Satu try/catch menangani semua kegagalan dan
+// finally memastikan ProgressBar selalu hilang. lifecycleScope membatalkan
+// coroutine otomatis saat Activity dihancurkan (Kembali / putar layar).
 class UserListActivity : AppCompatActivity() {
+
+    companion object {
+        private const val JEDA_SIMULASI_MS = 3000L
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_user_list)
@@ -23,33 +34,46 @@ class UserListActivity : AppCompatActivity() {
         val rvUsers = findViewById<RecyclerView>(R.id.rvUsers)
         val progressBar = findViewById<ProgressBar>(R.id.progressBar)
         val tvStatusUser = findViewById<TextView>(R.id.tvStatusUser)
+        val btnSimulasi = findViewById<Button>(R.id.btnSimulasi)
 
         rvUsers.layoutManager = LinearLayoutManager(this)
 
-        // Keadaan memuat: tampil sebelum jawaban datang.
-        progressBar.visibility = View.VISIBLE
-        tvStatusUser.text = "Memuat data pengguna..."
+        fun muat(jedaMs: Long) {
+            // Dinonaktifkan selama memuat agar tidak ada dua pemuatan sekaligus.
+            btnSimulasi.isEnabled = false
+            lifecycleScope.launch {
+                try {
+                    rvUsers.adapter = null
+                    progressBar.visibility = View.VISIBLE
+                    tvStatusUser.text = getString(
+                        if (jedaMs > 0) R.string.simulasi_berjalan else R.string.memuat_data
+                    )
 
-        RetrofitClient.api.getUsers().enqueue(object : Callback<List<User>> {
-            override fun onResponse(call: Call<List<User>>, response: Response<List<User>>) {
-                progressBar.visibility = View.GONE
-                if (response.isSuccessful) {
-                    tvStatusUser.text = ""
-                    // Adapter dipasang SETELAH data datang, bukan di onCreate.
-                    rvUsers.adapter = UserAdapter(response.body() ?: emptyList())
-                } else {
-                    // Server menjawab tetapi bukan 2xx (mis. 404): tetap masuk
-                    // onResponse, bukan onFailure.
-                    tvStatusUser.text = "Server menjawab dengan kode ${response.code()}"
+                    // Jaringan (dan simulasi) di IO; utas Main tetap bebas.
+                    val users = withContext(Dispatchers.IO) {
+                        delay(jedaMs) // menjeda coroutine, BUKAN membekukan utas
+                        RetrofitClient.api.getUsers()
+                    }
+
+                    // Kembali di Main: aman update UI.
+                    rvUsers.adapter = UserAdapter(users)
+                    tvStatusUser.text = getString(R.string.pengguna_dimuat)
+                } catch (e: CancellationException) {
+                    // Layar ditutup saat memuat: batal biasa, bukan kegagalan.
+                    throw e
+                } catch (e: Exception) {
+                    val pesan = if (e is HttpException) getString(R.string.gagal_kode, e.code())
+                    else getString(R.string.gagal_terhubung)
+                    tvStatusUser.text = pesan
+                    Toast.makeText(this@UserListActivity, pesan, Toast.LENGTH_SHORT).show()
+                } finally {
+                    progressBar.visibility = View.GONE
+                    btnSimulasi.isEnabled = true
                 }
             }
+        }
 
-            override fun onFailure(call: Call<List<User>>, t: Throwable) {
-                // Gagal total: tidak ada internet / server tidak terjangkau.
-                progressBar.visibility = View.GONE
-                tvStatusUser.text = "Gagal memuat data: ${t.message}"
-                Toast.makeText(this@UserListActivity, "Periksa koneksi internet", Toast.LENGTH_SHORT).show()
-            }
-        })
+        btnSimulasi.setOnClickListener { muat(JEDA_SIMULASI_MS) }
+        muat(0)
     }
 }

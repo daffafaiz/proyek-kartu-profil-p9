@@ -6,15 +6,17 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import retrofit2.HttpException
 
-// Tugas eksplorasi Pertemuan 10 — API pilihan sendiri (DummyJSON Quotes),
-// pola yang sama dengan UserListActivity: model + ApiService +
-// RetrofitClient + enqueue + RecyclerView.
+// API pilihan sendiri (DummyJSON Quotes), pola coroutine yang sama dengan
+// UserListActivity (Pertemuan 11).
 class QuoteListActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,25 +28,27 @@ class QuoteListActivity : AppCompatActivity() {
 
         rvQuotes.layoutManager = LinearLayoutManager(this)
 
-        progressBar.visibility = View.VISIBLE
-        tvStatusQuote.text = "Memuat kutipan..."
+        lifecycleScope.launch {
+            try {
+                progressBar.visibility = View.VISIBLE
+                tvStatusQuote.text = getString(R.string.memuat_data)
 
-        RetrofitClient.quoteApi.getQuotes().enqueue(object : Callback<QuotesResponse> {
-            override fun onResponse(call: Call<QuotesResponse>, response: Response<QuotesResponse>) {
-                progressBar.visibility = View.GONE
-                if (response.isSuccessful) {
-                    tvStatusQuote.text = ""
-                    rvQuotes.adapter = QuoteAdapter(response.body()?.quotes ?: emptyList())
-                } else {
-                    tvStatusQuote.text = "Server menjawab dengan kode ${response.code()}"
+                val hasil = withContext(Dispatchers.IO) {
+                    RetrofitClient.quoteApi.getQuotes()
                 }
-            }
 
-            override fun onFailure(call: Call<QuotesResponse>, t: Throwable) {
+                rvQuotes.adapter = QuoteAdapter(hasil.quotes)
+                tvStatusQuote.text = getString(R.string.kutipan_dimuat)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                val pesan = if (e is HttpException) getString(R.string.gagal_kode, e.code())
+                else getString(R.string.gagal_terhubung)
+                tvStatusQuote.text = pesan
+                Toast.makeText(this@QuoteListActivity, pesan, Toast.LENGTH_SHORT).show()
+            } finally {
                 progressBar.visibility = View.GONE
-                tvStatusQuote.text = "Gagal memuat data: ${t.message}"
-                Toast.makeText(this@QuoteListActivity, "Periksa koneksi internet", Toast.LENGTH_SHORT).show()
             }
-        })
+        }
     }
 }

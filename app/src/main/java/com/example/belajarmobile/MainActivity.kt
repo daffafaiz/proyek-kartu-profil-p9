@@ -155,10 +155,14 @@ class MainActivity : AppCompatActivity() {
         // --- Pertemuan 10: buka layar daftar dari internet (REST API). ---
         // Data profil tetap lokal (SharedPreferences); dua layar ini
         // mengambil datanya dari server setiap kali dibuka.
+        // Pertemuan 11: tombol dinonaktifkan begitu ditekan, supaya tekan
+        // dua kali dengan cepat tidak membuka dua layar. Aktif lagi di onResume.
         btnLihatPengguna.setOnClickListener {
+            btnLihatPengguna.isEnabled = false
             startActivity(Intent(this, UserListActivity::class.java))
         }
         btnLihatKutipan.setOnClickListener {
+            btnLihatKutipan.isEnabled = false
             startActivity(Intent(this, QuoteListActivity::class.java))
         }
 
@@ -167,5 +171,11 @@ class MainActivity : AppCompatActivity() {
             tvStatus.text = "Tekan biasa tombol Simpan untuk menyimpan & pindah layar"
             true
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        findViewById<Button>(R.id.btnLihatPengguna).isEnabled = true
+        findViewById<Button>(R.id.btnLihatKutipan).isEnabled = true
     }
 }

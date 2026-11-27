@@ -24,4 +24,12 @@
     <string name="tombol_lihat_kutipan">Lihat Kutipan</string>
     <string name="judul_pengguna">Daftar Pengguna</string>
     <string name="judul_kutipan">Kutipan</string>
+    <!-- TAMBAHAN Pertemuan 11 -->
+    <string name="memuat_data">Memuat data...</string>
+    <string name="pengguna_dimuat">10 pengguna dimuat</string>
+    <string name="kutipan_dimuat">Kutipan dimuat</string>
+    <string name="gagal_terhubung">Tidak dapat terhubung ke server. Periksa koneksi internet.</string>
+    <string name="gagal_kode">Server menjawab dengan kode %1$d</string>
+    <string name="tombol_simulasi">Muat ulang (simulasi proses 3 detik)</string>
+    <string name="simulasi_berjalan">Simulasi proses lama 3 detik...</string>
 </resources>

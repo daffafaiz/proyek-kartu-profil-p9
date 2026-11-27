@@ -39,6 +39,7 @@ kedua beserta lencana inisial.
 Package: `com.example.belajarmobile` • Min SDK 24 • Target/Compile SDK 34
 Gradle 8.7 • Android Gradle Plugin 8.5.2 • Kotlin 2.0.20 • AppCompat 1.7.0
 Retrofit 2.9.0 • converter-gson 2.9.0 • RecyclerView 1.3.2 (Pertemuan 10)
+Coroutines 1.8.1 • lifecycle-runtime-ktx 2.8.7 (Pertemuan 11)
 
 ## Cara menjalankan
 
@@ -129,6 +130,10 @@ masuk ke SharedPreferences dengan menggabungkan teks secara manual adalah
 tanda datanya sudah layak masuk Room.
 
 ## Pertemuan 10: Mengambil Data dari Internet (REST API)
+
+> Bagian ini menggambarkan versi Pertemuan 10 (callback `enqueue`). Sejak
+> Pertemuan 11 pemuatan data memakai coroutine, dan teks status serta pesan
+> gagalnya berubah. Lihat bagian Pertemuan 11 di bawah.
 
 Kartu Profil kini punya dua tombol baru di layar utama. Data profil tetap
 disimpan **lokal** (SharedPreferences, Pertemuan 9), sedangkan dua daftar
@@ -225,3 +230,83 @@ Layar utama kini punya dua tombol baru. Setiap tombol membuka layar daftar yang 
 3. **Mode pesawat dimatikan:** tekan tombol lagi. 10 pengguna tampil
    kembali tanpa menutup aplikasi.
 4. Ulangi untuk **Lihat Kutipan**: 10 kutipan beserta penulisnya.
+
+## Pertemuan 11: Asinkron dengan Coroutine
+
+Project yang sama, dilanjutkan. Daftar pengguna dan daftar kutipan kini
+dimuat dengan **coroutine**, bukan callback. Hasil di layar hampir sama;
+yang berubah terutama cara kerja di balik layar.
+
+### Perbedaan dengan Pertemuan 10
+
+| | Pertemuan 10 (callback) | Pertemuan 11 (coroutine) |
+| - | ----------------------- | ------------------------ |
+| `ApiService` | `fun getUsers(): Call<List<User>>` | `suspend fun getUsers(): List<User>` |
+| Cara memanggil | `enqueue(object : Callback ...)` | `lifecycleScope.launch` + `withContext(Dispatchers.IO)` |
+| Sukses dan gagal | Terpisah di `onResponse` dan `onFailure` | Satu `try/catch/finally`, dibaca dari atas ke bawah |
+| Kode bukan 2xx (mis. 404) | Dicek dengan `response.isSuccessful` | Menjadi `HttpException` yang ditangkap `catch` |
+| Menyembunyikan `ProgressBar` | Ditulis di dua cabang | Sekali saja di `finally` |
+| Saat layar ditutup | Panggilan tetap berjalan | Coroutine dibatalkan otomatis |
+| Teks saat sukses | Dikosongkan | "10 pengguna dimuat" / "Kutipan dimuat" |
+| Pesan gagal | "Gagal memuat data: ..." + Toast "Periksa koneksi internet" | "Tidak dapat terhubung ke server. Periksa koneksi internet." (layar dan Toast) |
+| Tekan tombol dua kali | Bisa membuka dua layar | Tombol nonaktif sampai kembali ke layar utama |
+| Dependensi baru | - | `kotlinx-coroutines-android:1.8.1`, `lifecycle-runtime-ktx:2.8.7` |
+
+`RetrofitClient`, `User`, `Quote`, dan kedua adapter tidak berubah.
+SharedPreferences (Pertemuan 9) tetap sama.
+
+Bentuk kode sebelum dan sesudah:
+
+```kotlin
+// Pertemuan 10
+RetrofitClient.api.getUsers().enqueue(object : Callback<List<User>> {
+    override fun onResponse(...) { /* sukses */ }
+    override fun onFailure(...) { /* gagal */ }
+})
+
+// Pertemuan 11
+lifecycleScope.launch {
+    try {
+        val users = withContext(Dispatchers.IO) { RetrofitClient.api.getUsers() }
+        rvUsers.adapter = UserAdapter(users)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        // gagal
+    } finally {
+        progressBar.visibility = View.GONE
+    }
+}
+```
+
+### Istilah yang dipakai
+
+| Istilah | Arti singkat |
+| ------- | ------------ |
+| `suspend` | Fungsi yang boleh dijeda saat menunggu, tanpa memblokir utas |
+| `lifecycleScope.launch` | Memulai coroutine yang terikat umur Activity |
+| `Dispatchers.IO` | Tempat kerja jaringan dan file |
+| `Dispatchers.Main` | Tempat memperbarui tampilan |
+
+`CancellationException` dilempar ulang sebelum `catch (e: Exception)`.
+Tanpa itu, menekan Kembali saat memuat akan dianggap gagal dan Toast error
+bisa muncul, padahal pemuatan hanya dibatalkan.
+
+### Eksplorasi: simulasi proses lama
+
+- **Yang disimulasikan:** tombol "Muat ulang (simulasi proses 3 detik)" di
+  layar Daftar Pengguna menjalankan `delay(3000)` sebelum memanggil API.
+- **Lama delay:** 3 detik, ditambah waktu jaringan.
+- **Yang diharapkan:** `ProgressBar` berputar, layar tidak membeku, tombol
+  Kembali tetap bisa ditekan, dan tombol simulasi nonaktif sampai selesai.
+- **Yang terlihat di HP:** _(isi setelah diuji)_
+
+### Uji responsif (Latihan 6)
+
+| Uji | Cara | Hasil yang benar | Hasil di HP |
+| --- | ---- | ---------------- | ----------- |
+| Tombol Kembali | Tekan tombol simulasi, lalu Kembali saat loading | Layar langsung kembali, tanpa Toast error | _(isi)_ |
+| Tekan dua kali | Tekan **Lihat Pengguna** dua kali dengan cepat | Hanya satu layar terbuka | _(isi)_ |
+| Putar layar | Putar HP saat memuat | Tidak crash, data dimuat ulang | _(isi)_ |
+| Internet mati | Mode pesawat, lalu buka daftar | Toast dan status error, `ProgressBar` hilang | _(isi)_ |
+

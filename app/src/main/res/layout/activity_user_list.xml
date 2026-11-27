@@ -23,6 +23,14 @@
         android:layout_marginTop="8dp"
         android:textColor="@color/text_muted" />
 
+    <!-- Pertemuan 11, tugas eksplorasi: simulasi proses lama. -->
+    <Button
+        android:id="@+id/btnSimulasi"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/tombol_simulasi" />
+
     <ProgressBar
         android:id="@+id/progressBar"
         android:layout_width="wrap_content"
